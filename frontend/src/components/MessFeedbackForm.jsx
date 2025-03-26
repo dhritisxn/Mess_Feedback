@@ -1,0 +1,284 @@
+import { useState, useRef } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./form.css";
+
+const MessFeedbackForm = () => {
+  const [formData, setFormData] = useState({
+    regNo: "",
+    name: "",
+    blockRoom: "",
+    messName: "",
+    messType: "",
+    category: "",
+    suggestions: "",
+    comments: "",
+    proof: null,
+  });
+
+  const [filePreview, setFilePreview] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Handle Input Change (handleChange: var, arrow function, e: event, target: activities going on in page) 
+  //in js, we declare vars using const, var, let
+  //setFormData: setting value for the input field (eg: name)
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // Handle File Upload
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setFormData({ ...formData, proof: file });
+
+    // Preview only if it's an image
+    if (file && file.type.startsWith("image/")) {
+      setFilePreview(URL.createObjectURL(file));
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  // Handle Form Submission
+  //async for synchronisation of frontend and backend
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formDataObj = new FormData();
+    Object.keys(formData).forEach((key) => {
+      formDataObj.append(key, formData[key]);
+    });
+
+    // Append proof file if it exists
+    if (formData.proof) {
+      formDataObj.append("proof", formData.proof);
+    }
+
+    try {
+      const response = await fetch("#", {
+        method: "POST",
+        body: formDataObj,
+      });
+
+      const result = await response.json();
+      alert(result.message);
+
+      // Reset form after successful submission
+      setFormData({
+        regNo: "",
+        name: "",
+        blockRoom: "",
+        messName: "",
+        messType: "",
+        category: "",
+        suggestions: "",
+        comments: "",
+        proof: null,
+      });
+
+      setFilePreview(null);
+
+      // ✅ Reset file input manually
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      alert("Submission failed!");
+    }
+  };
+
+  // Function to Download Reports
+  const downloadReport = (type) => {
+    window.location.href = "#";
+  };
+
+  return (
+    <div className="container d-flex justify-content-center align-items-center min-vh-100 mt-4 mb-4">
+      <div className="card shadow-lg p-4 w-100" style={{ maxWidth: "800px" }}>
+        <h2 className="text-center main-txt">Mess Feedback Form</h2>
+        <form onSubmit={handleSubmit}>
+          {/* Registration No & Name */}
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Reg No:</label>
+              <input
+                type="text"
+                className="form-control custom-input"
+                name="regNo"
+                value={formData.regNo}
+                onChange={handleChange}
+                placeholder="Enter registration number"
+                required
+              />
+            </div>
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Name:</label>
+              <input
+                type="text"
+                className="form-control custom-input"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter your name"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Block & Room No & Mess Name */}
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Block & Room No:</label>
+              <input
+                type="text"
+                className="form-control custom-input"
+                name="blockRoom"
+                value={formData.blockRoom}
+                onChange={handleChange}
+                placeholder="Enter block & room number"
+                required
+              />
+            </div>
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Mess Name:</label>
+              <input
+                type="text"
+                className="form-control custom-input"
+                name="messName"
+                value={formData.messName}
+                onChange={handleChange}
+                placeholder="Enter mess name"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Mess Type & Category */}
+          <div className="row">
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Type of Mess:</label>
+              <select
+                className="form-select custom-select"
+                name="messType"
+                value={formData.messType}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Type</option>
+                <option value="Veg">Veg</option>
+                <option value="Non-Veg">Non-Veg</option>
+                <option value="Special">Special</option>
+                <option value="Night Mess">Night Mess</option>
+              </select>
+            </div>
+            <div className="col-md-6 mb-3">
+              <label className="form-label">Category:</label>
+              <select
+                className="form-select custom-select"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Category</option>
+                <option value="Quality">Quality</option>
+                <option value="Quantity">Quantity</option>
+                <option value="Hygiene">Hygiene</option>
+                <option value="Mess Timing">Mess Timing</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Suggestions & Comments */}
+          <div className="mb-3">
+            <label className="form-label">Suggestions:</label>
+            <textarea
+              className="form-control custom-input"
+              name="suggestions"
+              value={formData.suggestions}
+              onChange={handleChange}
+              placeholder="Enter your suggestions"
+              rows="3"
+            ></textarea>
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Comments:</label>
+            <textarea
+              className="form-control custom-input"
+              name="comments"
+              value={formData.comments}
+              onChange={handleChange}
+              placeholder="Enter additional comments"
+              rows="3"
+            ></textarea>
+          </div>
+
+          {/* File Upload Section */}
+          <div className="input-group">
+            <label className="form-label">Upload Proof (Optional):</label>
+
+            <div className="file-upload-container">
+              {/* Custom File Upload Button */}
+              <label className="file-upload-btn">
+                <span className="upload-icon">📂</span> Choose File
+                <input
+                  type="file"
+                  className="file-upload-input"
+                  name="proof"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.jpg,.jpeg,.png"
+                />
+              </label>
+
+              {/* Show Selected File Name */}
+              {formData.proof && (
+                <p className="file-name">{formData.proof.name}</p>
+              )}
+            </div>
+
+            {/* Image Preview */}
+            {filePreview && (
+              <div className="preview-container">
+                <p>Preview:</p>
+                <img src={filePreview} alt="Preview" className="preview-img" />
+              </div>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <div className="text-center">
+            <button
+              type="submit"
+              className="btn btn-primary custom-button bot p-2"
+            >
+              Submit Feedback
+            </button>
+          </div>
+        </form>
+
+        {/* Download Report Buttons */}
+        <div className="text-center mt-4">
+          <h5 className="mb-3">Download Reports</h5>
+          <button
+            className="btn btn-success mx-2 p-2 bot"
+            onClick={() => downloadReport("excel")}
+          >
+            Download Excel Report
+          </button>
+          <button
+            className="btn btn-danger mx-2 p-2 bot"
+            onClick={() => downloadReport("pdf")}
+          >
+            Download PDF Report
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MessFeedbackForm;
