@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./form.css";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const MessFeedbackForm = () => {
   const [formData, setFormData] = useState({
@@ -18,9 +20,9 @@ const MessFeedbackForm = () => {
   const [filePreview, setFilePreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Handle Input Change (handleChange: var, arrow function, e: event, target: activities going on in page) 
-  //in js, we declare vars using const, var, let
-  //setFormData: setting value for the input field (eg: name)
+  
+
+  // Handle Input Change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -40,14 +42,29 @@ const MessFeedbackForm = () => {
   };
 
   // Handle Form Submission
-  //async for synchronisation of frontend and backend
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validation for Registration Number
+    if (formData.regNo.length < 5) {
+      toast.error("Registration number must be at least 5 characters long! ❌");
+      return;
+    }
+
+    // Validation for Block & Room Number
+    if (!formData.blockRoom.includes(" ")) {
+      toast.error("Block & Room number must include both block and room details! ❌");
+      return;
+    }
+
     const formDataObj = new FormData();
+
+    // Append all form fields except proof file
     Object.keys(formData).forEach((key) => {
-      formDataObj.append(key, formData[key]);
+      if (key !== "proof") {
+        //  Prevent duplicate "proof" field
+        formDataObj.append(key, formData[key]);
+      }
     });
 
     // Append proof file if it exists
@@ -56,42 +73,53 @@ const MessFeedbackForm = () => {
     }
 
     try {
-      const response = await fetch("#", {
+      // Show Uploading Notification
+      const uploadToast = toast.loading("Uploading file...");
+
+      const response = await fetch("http://localhost:5000/submit-feedback", {
         method: "POST",
         body: formDataObj,
       });
 
       const result = await response.json();
-      alert(result.message);
 
-      // Reset form after successful submission
-      setFormData({
-        regNo: "",
-        name: "",
-        blockRoom: "",
-        messName: "",
-        messType: "",
-        category: "",
-        suggestions: "",
-        comments: "",
-        proof: null,
-      });
+      // Remove the loading toast
+      toast.dismiss(uploadToast);
 
-      setFilePreview(null);
+      if (response.ok) {
+        toast.success("Feedback submitted successfully! ✅");
 
-      // ✅ Reset file input manually
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        // Reset form on successful submission
+        setFormData({
+          regNo: "",
+          name: "",
+          blockRoom: "",
+          messName: "",
+          messType: "",
+          category: "",
+          suggestions: "",
+          comments: "",
+          proof: null,
+        });
+
+        setFilePreview(null);
+
+        // Reset file input manually
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        toast.error(result.message || "Submission failed! ❌");
       }
     } catch (error) {
-      console.error("Error submitting feedback:", error);
-      alert("Submission failed!");
+      toast.dismiss();
+      toast.error("Error submitting feedback! ❌");
     }
   };
 
   // Function to Download Reports
   const downloadReport = (type) => {
-    window.location.href = "#";
+    window.location.href = `http://localhost:5000/generate-${type}-report`;
   };
 
   return (
@@ -277,6 +305,8 @@ const MessFeedbackForm = () => {
           </button>
         </div>
       </div>
+      {/* Toaster Container */}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
