@@ -1,4 +1,5 @@
 const express = require("express");
+const mysql = require("mysql");
 const cors = require("cors");
 const multer = require("multer");
 const admin = require("firebase-admin");
@@ -23,7 +24,7 @@ try {
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: "mess-feedback-d5e23.firebasestorage.app", 
+  storageBucket: "mess-feedback-d5e23.firebasestorage.app", // Update the correct bucket name
 });
 
 const bucket = admin.storage().bucket();
@@ -31,36 +32,26 @@ const bucket = admin.storage().bucket();
 // Multer Setup (Temp File Storage)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, 
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size (5MB)
 });
 
 // MySQL Connection Pool
-
-const mysql = require("mysql2"); 
-
 const db = mysql.createPool({
   connectionLimit: 10,
-  host: "br2tgy3uljk3uvddqxzg-mysql.services.clever-cloud.com",
-  user: "ukd2kpv7daakfzgk",
-  password: "x9FUImnXbBNq6HTJnn9X",
-  database: "br2tgy3uljk3uvddqxzg",
-  port: 3306,
-  ssl: {
-    rejectUnauthorized: false,  // ✅ Ignore SSL errors
-  }
+  host: "localhost",
+  user: "root",
+  password: "yourpassword",
+  database: "mess_feedback",
 });
-
 
 db.getConnection((err, connection) => {
   if (err) {
-    console.error("Database connection failed:", err);
+    console.error(" Database connection failed:", err);
     process.exit(1);
   }
-  console.log("Connected to Clever Cloud MySQL database");
+  console.log(" Connected to MySQL database");
   connection.release();
 });
-
-
 
 //  Ensure 'reports' folder exists
 const reportsDir = "./reports";
@@ -189,4 +180,4 @@ app.get("/generate-pdf-report", (req, res) => {
 
 //  Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
